@@ -12,6 +12,7 @@ const messageSchema = new mongoose.Schema({
 const zMessageSchema = z.object({
   id: z.string(),
   content: z.string(),
+  entityCreationTimestamp: z.date(),
 })
 
 // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
@@ -51,14 +52,13 @@ const appRouter = router({
     }),
   'msg.list': publicProcedure.output(z.array(zMessageSchema)).query(async () => {
     await mongoose.connect(process.env.MONGO_URL as string)
-    /*return (await MessageModel.find({})).map((message) => {
-      return zMessageSchema.parse({
+    return (await MessageModel.find({})).map((message) => {
+      return {
         id: message.id,
         content: message.content,
         entityCreationTimestamp: message.entityCreationTimestamp,
-      })
-    })*/
-    return []
+      }
+    })
   }),
 })
 

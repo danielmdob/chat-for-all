@@ -43,7 +43,10 @@ export default function IndexPage(): ReactElement {
       <section className="pb-52">
         {listResult.data.map((message) => (
           <div className="border border-emerald-300 m-4 rounded-md p-4 group relative" key={message.id}>
-            {message.content}
+            <div>{message.content}</div>
+            <div className="text-xs mt-2 text-gray-300">
+              {new Date(message.entityCreationTimestamp).toLocaleString()}
+            </div>
             <button
               className="bg-gray-300 absolute right-0.5 top-0.5 text-white rounded-md text-sm p-1 hidden group-hover:inline-block"
               onClick={() => {
