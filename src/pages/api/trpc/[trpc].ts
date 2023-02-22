@@ -1,39 +1,73 @@
-/**
- * This is the API-handler of your app that contains all your API routes.
- * On a bigger app, you will probably want to split this file up into multiple files.
- */
-import * as trpcNext from '@trpc/server/adapters/next';
-import { z } from 'zod';
-import { publicProcedure, router } from '~/server/trpc';
+import * as trpcNext from '@trpc/server/adapters/next'
+import { z } from 'zod'
+import { publicProcedure, router } from '~/server/trpc'
+import mongoose from 'mongoose'
+
+const messageSchema = new mongoose.Schema({
+  content: String,
+  entityCreationTimestamp: Date,
+  imageUrl: String,
+})
+
+const zMessageSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+})
+
+// eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+const MessageModel = mongoose.models.Message || mongoose.model('Message', messageSchema)
 
 const appRouter = router({
-  greeting: publicProcedure
-    // This is the input schema of your procedure
-    // 💡 Tip: Try changing this and see type errors on the client straight away
+  'msg.add': publicProcedure
     .input(
       z.object({
-        name: z.string().nullish(),
+        content: z.string(),
+        imageSizeBytes: z.number().optional(),
       }),
     )
-    .query(({ input }) => {
-      // This is what you're returning to your client
-      return {
-        text: `hello ${input?.name ?? 'world'}`,
-        // 💡 Tip: Try adding a new property here and see it propagate to the client straight-away
-      };
+    .output(
+      z.object({
+        presignedUrl: z.string().optional().nullable(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      await mongoose.connect(process.env.MONGO_URL as string)
+      const msg = new MessageModel({
+        content: input.content,
+        entityCreationTimestamp: new Date(),
+      })
+      await msg.save()
+      const presignedUrl = Number(input.imageSizeBytes) > 0 ? msg.id : null
+      return { presignedUrl }
     }),
-  // 💡 Tip: Try adding a new procedure here and see if you can use it in the client!
-  // getUser: publicProcedure.query(() => {
-  //   return { id: '1', name: 'bob' };
-  // }),
-});
+  'msg.delete': publicProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      await MessageModel.deleteOne({ _id: input.id })
+    }),
+  'msg.list': publicProcedure.output(z.array(zMessageSchema)).query(async () => {
+    await mongoose.connect(process.env.MONGO_URL as string)
+    /*return (await MessageModel.find({})).map((message) => {
+      return zMessageSchema.parse({
+        id: message.id,
+        content: message.content,
+        entityCreationTimestamp: message.entityCreationTimestamp,
+      })
+    })*/
+    return []
+  }),
+})
 
 // export only the type definition of the API
 // None of the actual implementation is exposed to the client
-export type AppRouter = typeof appRouter;
+export type AppRouter = typeof appRouter
 
 // export API handler
 export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext: () => ({}),
-});
+})
