@@ -6,17 +6,25 @@ export interface SignedPostRequest {
   fileSizeBytes: number
 }
 
-export function getSignedRequest(request: SignedPostRequest): S3.PresignedPost {
-  return new S3({ useAccelerateEndpoint: true }).createPresignedPost(getPresignedPostParams(request))
+const bucketName = 'chat-for-all-media'
+
+export function getSignedRequest(request: SignedPostRequest): string {
+  return new S3({ useAccelerateEndpoint: true, signatureVersion: 'v4' }).getSignedUrl('putObject', {
+    ACL: 'public-read',
+    Bucket: bucketName,
+    Key: request.key,
+    Expires: 600,
+  })
 }
-function getPresignedPostParams({ key, contentType, fileSizeBytes }: SignedPostRequest): S3.PresignedPost.Params {
-  return {
-    Bucket: 'chat-for-all-media',
-    Fields: {
-      key,
-      acl: 'public-read',
+
+export function deleteObject(objectKey: string): void {
+  new S3({ signatureVersion: 'v4' }).deleteObject(
+    {
+      Bucket: bucketName,
+      Key: objectKey,
     },
-    Expires: 600, // 10 minutes
-    Conditions: [{ 'Content-Type': contentType }, ['content-length-range', 0, fileSizeBytes]],
-  }
+    (err) => {
+      console.error('err', err)
+    },
+  )
 }

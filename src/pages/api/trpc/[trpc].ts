@@ -2,6 +2,7 @@ import * as trpcNext from '@trpc/server/adapters/next'
 import { z } from 'zod'
 import { publicProcedure, router } from '~/server/trpc'
 import mongoose from 'mongoose'
+import { deleteObject, getSignedRequest } from '~/server/s3'
 
 const messageSchema = new mongoose.Schema({
   content: String,
@@ -23,7 +24,7 @@ const appRouter = router({
     .input(
       z.object({
         content: z.string(),
-        imageSizeBytes: z.number().optional(),
+        imageSizeBytes: z.number().optional().nullish(),
       }),
     )
     .output(
@@ -38,8 +39,15 @@ const appRouter = router({
         entityCreationTimestamp: new Date(),
       })
       await msg.save()
-      const presignedUrl = Number(input.imageSizeBytes) > 0 ? msg.id : null
-      return { presignedUrl }
+      const presignedUrl =
+        Number(input.imageSizeBytes) > 0
+          ? getSignedRequest({
+              contentType: 'image/jpeg',
+              key: msg.id,
+              fileSizeBytes: Number(input.imageSizeBytes),
+            })
+          : null
+      return { presignedUrl: presignedUrl }
     }),
   'msg.delete': publicProcedure
     .input(
@@ -49,6 +57,7 @@ const appRouter = router({
     )
     .mutation(async ({ input }) => {
       await MessageModel.deleteOne({ _id: input.id })
+      deleteObject(input.id)
     }),
   'msg.list': publicProcedure.output(z.array(zMessageSchema)).query(async () => {
     await mongoose.connect(process.env.MONGO_URL as string)
