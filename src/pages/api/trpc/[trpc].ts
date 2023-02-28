@@ -16,8 +16,14 @@ const zMessageSchema = z.object({
   entityCreationTimestamp: z.date(),
 })
 
+export type Message = z.infer<typeof zMessageSchema>
+
 // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
 const MessageModel = mongoose.models.Message || mongoose.model('Message', messageSchema)
+
+const connectDb = async () => {
+  await mongoose.connect(process.env.MONGO_URL as string, { maxPoolSize: 10 })
+}
 
 const appRouter = router({
   'msg.add': publicProcedure
@@ -33,7 +39,7 @@ const appRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
-      await mongoose.connect(process.env.MONGO_URL as string)
+      await connectDb()
       const msg = new MessageModel({
         content: input.content,
         entityCreationTimestamp: new Date(),
@@ -60,7 +66,7 @@ const appRouter = router({
       deleteObject(input.id)
     }),
   'msg.list': publicProcedure.output(z.array(zMessageSchema)).query(async () => {
-    await mongoose.connect(process.env.MONGO_URL as string)
+    await connectDb()
     return (await MessageModel.find({})).map((message) => {
       return {
         id: message.id,
