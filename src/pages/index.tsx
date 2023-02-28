@@ -5,7 +5,7 @@ import type { Message } from './api/trpc/[trpc]'
 import { v4 as uuid } from 'uuid'
 
 function ScrollToBottom() {
-  const elementRef = useRef<HTMLDivElement | null>()
+  const elementRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => elementRef.current?.scrollIntoView())
   return <div ref={elementRef} />
 }
