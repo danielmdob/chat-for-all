@@ -67,7 +67,6 @@ export default function IndexPage(): ReactElement {
   }
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    console.log('files', e.target.files)
     if (!e.target.files) {
       return
     }
@@ -101,6 +100,7 @@ export default function IndexPage(): ReactElement {
         ref={inputRef}
         onChange={handleFileChange}
         onClick={(event) => {
+          // @ts-ignore setting the value as null allows us to upload the same file on 2 consecutive messages
           event.target.value = null
         }}
       />
