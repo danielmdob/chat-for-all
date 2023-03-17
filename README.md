@@ -1,20 +1,6 @@
-# Next.js + tRPC
+# Chat for all
 
-This example shows how you can make a typed query using a minimal implementation of tRPC following [`this as a reference`](https://trpc.io/docs/nextjs).
+Minimal unauthenticated chat app for testing trpc. Also uses tailwind, s3 presigned urls, among other technologies.
 
-## Setup
 
-```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-minimal-starter trpc-minimal-starter
-cd trpc-minimal-starter
-npm i
-npm run dev
-```
-
-## Development
-
-### Start project
-
-```bash
-npm run dev        # starts next.js
-```
+[Deployed here](https://chat-for-all.vercel.app/)
